@@ -8,16 +8,22 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.hdesrosiers.listmaker.TaskList
 import com.hdesrosiers.listmaker.databinding.MainFragmentBinding
 
 
 
-class MainFragment : Fragment() {
+class MainFragment(val clickListener: MainFragmentInteractionListener) : Fragment(),
+    ListSelectionRecyclerViewAdapter.ListSelectionRecyclerViewClickListener {
+
+    interface MainFragmentInteractionListener {
+        fun listItemTapped(list: TaskList)
+    }
 
     private lateinit var binding: MainFragmentBinding
 
     companion object {
-        fun newInstance() = MainFragment()
+        fun newInstance(clickListener: MainFragmentInteractionListener) = MainFragment(clickListener)
     }
 
     private lateinit var viewModel: MainViewModel
@@ -37,7 +43,7 @@ class MainFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(requireActivity(), MainViewModelFactory(PreferenceManager.getDefaultSharedPreferences(requireActivity()))).get(MainViewModel::class.java)
 
-        val recyclerViewAdapter = ListSelectionRecyclerViewAdapter(viewModel.lists)
+        val recyclerViewAdapter = ListSelectionRecyclerViewAdapter(viewModel.lists, this)
 
         binding.listsRecyclerview.adapter = recyclerViewAdapter
 
@@ -45,6 +51,10 @@ class MainFragment : Fragment() {
             recyclerViewAdapter.listsUpdated()
         }
 
+    }
+
+    override fun listItemClicked(list: TaskList) {
+        clickListener.listItemTapped(list)
     }
 
 }

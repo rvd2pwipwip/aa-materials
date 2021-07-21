@@ -1,5 +1,6 @@
 package com.hdesrosiers.listmaker
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.widget.EditText
@@ -8,11 +9,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import com.hdesrosiers.listmaker.databinding.MainActivityBinding
+import com.hdesrosiers.listmaker.ui.detail.ListDetailActivity
 import com.hdesrosiers.listmaker.ui.main.MainFragment
 import com.hdesrosiers.listmaker.ui.main.MainViewModel
 import com.hdesrosiers.listmaker.ui.main.MainViewModelFactory
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MainFragment.MainFragmentInteractionListener {
     private lateinit var binding: MainActivityBinding
     private lateinit var viewModel: MainViewModel
 
@@ -26,8 +28,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
 
         if (savedInstanceState == null) {
+            val mainFragment = MainFragment.newInstance(this)
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, MainFragment.newInstance())
+                .replace(R.id.container, mainFragment)
                 .commitNow()
         }
 
@@ -47,8 +50,29 @@ class MainActivity : AppCompatActivity() {
         builder.setView(listTitleEditText)
         builder.setPositiveButton(positiveButtonTitle) { dialog, _ ->
             dialog.dismiss()
-            viewModel.saveList(TaskList(listTitleEditText.text.toString()))
+
+            val taskList = TaskList(listTitleEditText.text.toString())
+            viewModel.saveList(taskList)
+            showListDetail(taskList)
+
         }
         builder.create().show()
+    }
+
+    private fun showListDetail(list: TaskList) {
+        // 1
+        val listDetailIntent = Intent(this, ListDetailActivity::class.java)
+        // 2
+        listDetailIntent.putExtra(INTENT_LIST_KEY, list)
+        // 3
+        startActivity(listDetailIntent)
+    }
+
+    companion object {
+        const val INTENT_LIST_KEY = "list"
+    }
+
+    override fun listItemTapped(list: TaskList) {
+        showListDetail(list)
     }
 }
