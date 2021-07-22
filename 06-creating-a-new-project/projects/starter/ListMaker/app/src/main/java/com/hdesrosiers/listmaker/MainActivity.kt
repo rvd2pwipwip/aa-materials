@@ -1,5 +1,6 @@
 package com.hdesrosiers.listmaker
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
@@ -30,12 +31,26 @@ class MainActivity : AppCompatActivity(), MainFragment.MainFragmentInteractionLi
         if (savedInstanceState == null) {
             val mainFragment = MainFragment.newInstance(this)
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, mainFragment)
+                .replace(R.id.detail_container, mainFragment)
                 .commitNow()
         }
 
         binding.fabButton.setOnClickListener {
             showCreateListDialog()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data:
+    Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        // 1
+        if (requestCode == LIST_DETAIL_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            // 2
+            data?.let {
+                // 3
+                viewModel.updateList(data.getParcelableExtra(INTENT_LIST_KEY)!!)
+                viewModel.refreshLists()
+            }
         }
     }
 
@@ -65,11 +80,13 @@ class MainActivity : AppCompatActivity(), MainFragment.MainFragmentInteractionLi
         // 2
         listDetailIntent.putExtra(INTENT_LIST_KEY, list)
         // 3
-        startActivity(listDetailIntent)
+//        startActivity(listDetailIntent)
+        startActivityForResult(listDetailIntent, LIST_DETAIL_REQUEST_CODE)
     }
 
     companion object {
         const val INTENT_LIST_KEY = "list"
+        const val LIST_DETAIL_REQUEST_CODE = 123
     }
 
     override fun listItemTapped(list: TaskList) {
