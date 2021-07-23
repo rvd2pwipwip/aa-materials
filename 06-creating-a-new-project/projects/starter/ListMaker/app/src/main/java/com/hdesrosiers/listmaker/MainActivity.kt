@@ -7,10 +7,13 @@ import android.text.InputType
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
+import androidx.fragment.app.commit
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import com.hdesrosiers.listmaker.databinding.MainActivityBinding
 import com.hdesrosiers.listmaker.ui.detail.ListDetailActivity
+import com.hdesrosiers.listmaker.ui.detail.ui.detail.ListDetailFragment
 import com.hdesrosiers.listmaker.ui.main.MainFragment
 import com.hdesrosiers.listmaker.ui.main.MainViewModel
 import com.hdesrosiers.listmaker.ui.main.MainViewModelFactory
@@ -29,10 +32,23 @@ class MainActivity : AppCompatActivity(), MainFragment.MainFragmentInteractionLi
         setContentView(view)
 
         if (savedInstanceState == null) {
-            val mainFragment = MainFragment.newInstance(this)
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.detail_container, mainFragment)
-                .commitNow()
+
+            // 1
+            val mainFragment = MainFragment.newInstance()
+            mainFragment.clickListener = this
+
+            // 2
+            val fragmentContainerViewId: Int = if (binding.mainFragmentContainer == null) {
+                R.id.detail_container
+            } else {
+                R.id.main_fragment_container
+            }
+
+            // 3
+            supportFragmentManager.commit {
+                setReorderingAllowed(true)
+                add(fragmentContainerViewId, mainFragment)
+            }
         }
 
         binding.fabButton.setOnClickListener {
@@ -53,6 +69,33 @@ class MainActivity : AppCompatActivity(), MainFragment.MainFragmentInteractionLi
             }
         }
     }
+
+    override fun onBackPressed() {
+
+        // 1
+        val listDetailFragment =
+            supportFragmentManager.findFragmentById(R.id.list_detail_fragment_container)
+
+        // 2
+        if (listDetailFragment == null) {
+            super.onBackPressed()
+        } else {
+            // 3
+            title = resources.getString(R.string.app_name)
+
+            // 4
+            supportFragmentManager.commit {
+                setReorderingAllowed(true)
+                remove(listDetailFragment)
+            }
+
+            // 5
+            binding.fabButton.setOnClickListener {
+                showCreateListDialog()
+            }
+        }
+    }
+
 
     private fun showCreateListDialog() {
         val dialogTitle = R.string.name_of_list
@@ -75,13 +118,37 @@ class MainActivity : AppCompatActivity(), MainFragment.MainFragmentInteractionLi
     }
 
     private fun showListDetail(list: TaskList) {
-        // 1
-        val listDetailIntent = Intent(this, ListDetailActivity::class.java)
-        // 2
-        listDetailIntent.putExtra(INTENT_LIST_KEY, list)
-        // 3
-//        startActivity(listDetailIntent)
-        startActivityForResult(listDetailIntent, LIST_DETAIL_REQUEST_CODE)
+
+        if (binding.mainFragmentContainer == null) {
+            val listDetailIntent = Intent(this, ListDetailActivity::class.java)
+            listDetailIntent.putExtra(INTENT_LIST_KEY, list)
+            startActivityForResult(listDetailIntent, LIST_DETAIL_REQUEST_CODE)
+        } else {
+            val bundle = bundleOf(INTENT_LIST_KEY to list)
+            supportFragmentManager.commit {
+                setReorderingAllowed(true)
+                replace(R.id.list_detail_fragment_container, ListDetailFragment::class.java, bundle, null)
+            }
+            binding.fabButton.setOnClickListener {
+                showCreateTaskDialog()
+            }
+        }
+    }
+
+    private fun showCreateTaskDialog() {
+        val taskEditText = EditText(this)
+        taskEditText.inputType = InputType.TYPE_CLASS_TEXT
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.task_to_add)
+            .setView(taskEditText)
+            .setPositiveButton(R.string.add_task) { dialog, _ ->
+                val task = taskEditText.text.toString()
+                viewModel.addTask(task)
+                dialog.dismiss()
+            }
+            .create()
+            .show()
     }
 
     companion object {

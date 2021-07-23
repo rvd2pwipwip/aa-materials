@@ -6,6 +6,13 @@ import com.hdesrosiers.listmaker.TaskList
 
 class MainViewModel(private val sharedPreferences: SharedPreferences) : ViewModel() {
     lateinit var onListAdded: () -> Unit
+    lateinit var onTaskAdded: () -> Unit
+    lateinit var list: TaskList
+
+    fun addTask(task: String) {
+        list.tasks.add(task)
+        onTaskAdded.invoke()
+    }
 
     val lists: MutableList<TaskList> by lazy {
         retrieveLists()

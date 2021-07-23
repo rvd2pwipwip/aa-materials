@@ -13,17 +13,18 @@ import com.hdesrosiers.listmaker.databinding.MainFragmentBinding
 
 
 
-class MainFragment(val clickListener: MainFragmentInteractionListener) : Fragment(),
+class MainFragment() : Fragment(),
     ListSelectionRecyclerViewAdapter.ListSelectionRecyclerViewClickListener {
 
     interface MainFragmentInteractionListener {
         fun listItemTapped(list: TaskList)
     }
 
+    lateinit var clickListener: MainFragmentInteractionListener
     private lateinit var binding: MainFragmentBinding
 
     companion object {
-        fun newInstance(clickListener: MainFragmentInteractionListener) = MainFragment(clickListener)
+        fun newInstance() = MainFragment()
     }
 
     private lateinit var viewModel: MainViewModel
